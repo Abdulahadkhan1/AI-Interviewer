@@ -2,21 +2,16 @@
 
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
-import { z } from "zod"
+import { email, z } from "zod"
 
 import { Button } from "@/components/ui/button"
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form"
+import {Form, FormField} from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import Image from "next/image"
 import Link from "next/link"
+import { triggerAsyncId } from "async_hooks"
+import { toast } from "sonner"
+import { useRouter } from "next/navigation"
 const formSchema = z.object({
   username: z.string().min(2).max(50),
 })
@@ -30,20 +25,33 @@ const AuthFormSchema = (type: FormType) => {
 }
 
 const AuthForm = ( { type }: {type : FormType}) => {
+  const  router = useRouter();
+  const formSchema = AuthFormSchema(type);
 
-  // 1. Define your form.
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      username: "",
+      name: "",
+      email: "",
+      password: "",
     },
   })
  
-  // 2. Define a submit handler.
+  
   function onSubmit(values: z.infer<typeof formSchema>) {
-    // Do something with the form values.
-    // ✅ This will be type-safe and validated.
-    console.log(values)
+    try{
+      if (type === 'sign-up') {
+        toast.success('Account created successfully!');
+        router.push('/sign-in');
+      } else {
+        toast.success('Signed in successfully!');
+        router.push('/');
+      }
+    }catch (error) {
+      console.log(error);
+      toast.error('There was an error: ${error}');
+    }
   }
 
   const siSignIn = type==="sign-in";
@@ -58,9 +66,38 @@ const AuthForm = ( { type }: {type : FormType}) => {
             <h3>Practice Job Interviews with AI </h3>
             <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="w-full space-y-6 mt-4 form">
-                    {!siSignIn && <p>Name</p>}
-                    <p>E-mail</p>
-                    <p>Password</p>
+                    {!siSignIn && (
+                      <FormField
+                        control={form.control}
+                        name="name"
+                        render={({ field }) => (
+                          <div>
+                            <label className="block text-sm font-medium">Name</label>
+                            <Input placeholder="Your Name" {...(field as any)} />
+                          </div>
+                        )}
+                      />
+                    )}
+                    <FormField
+                        control={form.control}
+                        name="email"
+                        render={({ field }) => (
+                          <div>
+                            <label className="block text-sm font-medium">Email</label>
+                            <Input placeholder="Your email address" type="email" {...(field as any)} />
+                          </div>
+                        )}
+                      />
+                    <FormField
+                        control={form.control}
+                        name="password"
+                        render={({ field }) => (
+                          <div>
+                            <label className="block text-sm font-medium">Password</label>
+                            <Input placeholder=" Enter your password" type="password" {...(field as any)} />
+                          </div>
+                        )}
+                      />
                     <Button className="btn" type="submit">{siSignIn ? 'Sign In ' : 'Create an Account'}</Button>
                 </form>
             </Form>
