@@ -3,6 +3,9 @@ import React from 'react'
 import dayjs from 'dayjs';
 import Image from 'next/image';
 import { getRandomInterviewCover } from '@/lib/utils';
+import { Button } from './ui/button';
+import { Link } from 'lucide-react';
+import DisplayTechIcons from './DisplayTechIcons';
 
 const InterviewCard = ({ interviewId, userId, role, type, techstack, 
     createdAt }: InterviewCardProps) => {
@@ -27,7 +30,28 @@ const InterviewCard = ({ interviewId, userId, role, type, techstack,
 
                 <div className='flex flex-row gap-5 mt-3'>
                     <div className='flex flex-row gap-2'>
-                        <Image src="/calendar.svg" alt="calendar-icon" width={22} height={22}/>                    </div>
+                        <Image src="/calendar.svg" alt="calendar-icon" width={22} height={22}/>                    
+                        <p>{formattedDate}</p>
+                        <div className='flex flex-row gap-2'>
+                            <Image src="/star.svg" alt="star-icon" width={22} height={22}/>
+                            <p>{feedback?.totalScore || '---'}/100</p>
+                        </div>
+                    </div>
+
+                    <p className='line-clamp-2 mt-5'>
+                        {feedback?.finalAssessment || 'You haven\'t taken this interview yet. Take it now to improve your skills.'}
+                    </p>
+                </div>
+                <div className='flex flex-row justify-between'>
+
+                    <DisplayTechIcons techStack= {techstack}/>                    
+                    <Button className='btn-primary'>
+                        <Link href={feedback 
+                        ? `/interview/${interviewId}/feedback`
+                        : `/interview/${interviewId}`}>
+                            {feedback ? 'Check Feedback' : 'View'}
+                        </Link>
+                    </Button>
                 </div>
             </div>
         </div>
