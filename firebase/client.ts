@@ -1,24 +1,38 @@
 // Import the functions you need from the SDKs you need
-import { initializeApp, getApp, getApps } from "firebase/app";
+import { getApp, getApps, initializeApp } from "firebase/app";
+// import { getAnalytics } from "firebase/analytics";
 import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
-
-// Your web app's Firebase configuration
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+// Use client-side env vars (NEXT_PUBLIC_*) — required for browser SDK
 const firebaseConfig = {
-  apiKey: "AIzaSyCzr8W7EJns1x0-j9n_o3nj3LTSgaCHbUU",
-  authDomain: "prep-wise-395e2.firebaseapp.com",
-  projectId: "prep-wise-395e2",
-  storageBucket: "prep-wise-395e2.firebasestorage.app",
-  messagingSenderId: "539630888920",
-  appId: "1:539630888920:web:84adc7e883fb6319b4b4ad",
-  measurementId: "G-HS54TLMTLW"
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || "",
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || "",
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "",
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || "",
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || "",
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID || "",
+  measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID || "",
 };
 
-// Initialize Firebase
-const app = !getApps.length ? initializeApp(firebaseConfig): getApp();
-export const auth = getAuth(app);
-export const db = getFirestore(app);
+const isClient = typeof window !== "undefined";
+
+if (isClient) {
+  // helpful debug when env vars are not provided
+  if (!firebaseConfig.apiKey) {
+    // eslint-disable-next-line no-console
+    console.error(
+      "Missing NEXT_PUBLIC_FIREBASE_API_KEY. Add your Firebase client config to .env.local and restart dev server."
+    );
+  }
+}
+
+let app: ReturnType<typeof initializeApp> | undefined;
+
+if (isClient) {
+  app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
+}
+
+// Expose auth/db only on client. On server they will be null to avoid server-side initialization.
+export const auth = isClient && app ? getAuth(app) : (null as unknown);
+export const db = isClient && app ? getFirestore(app) : (null as unknown);

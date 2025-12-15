@@ -1,9 +1,6 @@
 'use server';
-import { auth } from "@/firebase/admin";
-import { createUserWithEmailAndPassword } from "firebase/auth";
+import { auth, db } from "@/firebase/admin";
 import { cookies } from "next/headers";
-import { success } from "zod";
-import { ca } from "zod/locales";
 
 const ONE_WEEK = 60 * 60 * 24 * 7;
 
@@ -23,11 +20,16 @@ export async function SignUp(params: SignUpParams) {
         await db.collection('user').doc(uid).set({
             name,
             email,
-        });
+        })
+
+        return {
+            success: true,
+            message: 'Account created successfully, please SignIn to continue.'
+        }
     }
-    catch (e: any) {
+    catch (e: unknown) {
         console.log("Error creating user:", e);
-        if (e.code === 'auth/email-already-exists'){
+        if ((e as { code?: string }).code === 'auth/email-already-exists'){
         return {
             success: false,
             message: 'This email is already in use. Please try logging in instead.'
@@ -43,8 +45,8 @@ export async function SignUp(params: SignUpParams) {
 export async function SignIn(params: SignInParams) {
     const { email, idToken } = params;
     try {
-        const userRecord = await auth.getUserByEmail(email);       
-        if (userRecord) {
+        const userRecord = await db.collection('user').where('email', '==', email).get();
+        if (userRecord.empty) {
             return {
                 success: false,
                 message: 'User does not exist. Please SignUp first.'
@@ -75,4 +77,38 @@ export async function setSessionCookie(idToken: string) {
         path: '/',
         sameSite: 'lax',
     });
+}
+
+export async function getCurrentUser(): Promise<User | null> {
+    const cookieStore = await cookies();
+
+    const sessionCookie = cookieStore.get('session')?.value;
+
+    if (!sessionCookie) {
+        return null;
+    }
+
+    try {
+        const decodedClaims = await auth.verifySessionCookie(sessionCookie, true);
+
+        const userRecord = await db.collection('user').doc(decodedClaims.uid).get();   
+        
+        if (!userRecord.exists) return null;
+
+        return {
+            ...userRecord.data(),
+            id: userRecord.id,
+        } as User;
+    
+    } catch (e) {
+        console.log(e);
+        return null;
+    }
+
+
+} 
+export async function isAuthenticated() {
+    const user = await getCurrentUser();
+    
+    return !!user;
 }
