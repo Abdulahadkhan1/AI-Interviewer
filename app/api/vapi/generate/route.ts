@@ -122,6 +122,7 @@ Thank you! <3`;
         throw new Error("Invalid format");
       }
       
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (parseError) {
       return Response.json(
         { 
